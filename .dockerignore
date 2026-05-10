@@ -1,11 +1,41 @@
-node_modules
-.next
-.expo
-.env
-.env.*
-!.env.example
+# Solo necesitamos apps/web/ y sus archivos durante el build.
+# Excluimos todo lo demas para que el build context sea pequeno.
+
+**/node_modules
+**/.next
+**/.expo
+**/.expo-shared
+**/dist
+**/build
+**/.turbo
+**/.cache
+**/coverage
+**/*.tsbuildinfo
+
+# Otros apps y packages que no se construyen aqui
+apps/mobile
+apps/n8n-flows
+packages
+web
+antipor
+
+# Env / secretos
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git / CI
 .git
 .gitignore
-README.md
+.github
+.claude
+
+# Docs
 *.md
-coverage
+*.tar.gz
+DEPLOY.md
+README.md
+
+# OS
+.DS_Store
+Thumbs.db
