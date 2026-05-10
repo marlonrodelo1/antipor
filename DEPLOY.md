@@ -18,8 +18,8 @@
 1. **Create Application** → tipo `Application`.
 2. **Source**: GitHub → repo `marlonrodelo1/antipor` → branch `main`.
 3. **Build Type**: `Dockerfile`.
-4. **Build Context**: `/` (raíz del repo, no `apps/web`).
-5. **Dockerfile Path**: `apps/web/Dockerfile`.
+4. **Build Path**: `/` (raíz del repo).
+5. **Dockerfile**: `Dockerfile` (en la raíz, default).
 6. **Port**: `3000`.
 
 ### Variables de entorno
