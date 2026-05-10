@@ -21,9 +21,13 @@ export function LandingFooter() {
           </div>
           <div className="flex flex-col gap-2.5">
             <div className="mb-1 font-semibold text-white">Legal</div>
-            <span>Privacidad</span>
+            <Link href="/privacidad" className="hover:text-white">
+              Privacidad
+            </Link>
             <span>Términos</span>
-            <span>Contacto</span>
+            <a href="mailto:rodelomarlon1@gmail.com" className="hover:text-white">
+              Contacto
+            </a>
           </div>
           <div className="flex flex-col gap-2.5">
             <div className="mb-1 font-semibold text-white">Comunidad</div>

@@ -1,8 +1,23 @@
 import { z } from "zod";
 import OpenAI from "openai";
-import { fallbackScripts } from "./static-fallbacks.js";
+import { fallbackScripts } from "./static-fallbacks";
 
-export { fallbackScripts } from "./static-fallbacks.js";
+export { fallbackScripts } from "./static-fallbacks";
+
+// Personalization motor
+export {
+  buildPersonalizedPrompt,
+  pickContextualHobby,
+  type PersonalizationContext,
+  type ConversationContext,
+} from "./personalization";
+
+// Recovery codes (anonymous account sync)
+export {
+  generateRecoveryCode,
+  hashRecoveryCode,
+  verifyRecoveryCode,
+} from "./recovery-code";
 
 // =====================================================================
 // Tipos

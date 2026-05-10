@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Anchor, BookText, Home, Lock, Settings } from "lucide-react";
+import { Anchor, BookText, Home, Lock, MessageCircle, Settings } from "lucide-react";
 import { Wordmark } from "@/components/landing/wordmark";
 
 const navItems = [
   { href: "/panel", icon: Home, label: "Hoy" },
+  { href: "/panel/chat", icon: MessageCircle, label: "Chat" },
   { href: "/panel/diario", icon: BookText, label: "Diario" },
   { href: "/panel/anclas", icon: Anchor, label: "Anclas" },
   { href: "/panel/ajustes", icon: Settings, label: "Ajustes" },
@@ -61,7 +62,7 @@ export default function PanelLayout({
           {children}
         </main>
         {/* Mobile bottom nav */}
-        <nav className="grid grid-cols-4 border-t border-[var(--color-hairline)] bg-white md:hidden">
+        <nav className="grid grid-cols-5 border-t border-[var(--color-hairline)] bg-white md:hidden">
           {navItems.map((it) => (
             <Link
               key={it.href}

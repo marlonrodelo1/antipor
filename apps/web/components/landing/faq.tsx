@@ -6,19 +6,19 @@ import { cn } from "@/lib/utils";
 const items = [
   {
     q: "¿Es realmente gratis?",
-    a: "Sí, gratis y sin anuncios. La app se sostiene por donaciones voluntarias.",
+    a: "Sí, gratis y sin anuncios. Antiport se sostiene con donaciones voluntarias.",
+  },
+  {
+    q: "¿Necesito registrarme con email?",
+    a: "No. Sin email, sin contraseña, anónimo por defecto. Al entrar creamos un identificador interno y nada más. Si quieres usar Antiport en otro dispositivo, en ajustes puedes generar un código de respaldo de 6 palabras y recuperar tu cuenta donde quieras.",
   },
   {
     q: "¿Qué datos guardáis sobre mí?",
-    a: "El historial de URLs nunca sale del dispositivo. En el servidor solo guardamos tu email y configuración.",
+    a: "Solo lo que tú eliges contarnos en el onboarding (avatar, hobbies, horario, motivación), tu historial de chat con Aliado y el registro anónimo de tus intervenciones. Nunca guardamos URLs visitadas, ni contenido de páginas, ni datos biométricos.",
   },
   {
-    q: "¿Cómo funciona el bloqueo en iOS / Android?",
-    a: "En iOS usamos Screen Time. En Android, un servicio de accesibilidad o VPN local. Sin enviar tráfico fuera.",
-  },
-  {
-    q: "¿Puedo desinstalarla cuando quiera?",
-    a: "Sí. La fricción de 24h es opcional, opt-in en onboarding, y siempre puedes confirmarla por email.",
+    q: "¿Y si quiero borrar todo?",
+    a: "En ajustes hay un botón de borrado total. Tu identificador y todo lo asociado desaparece de nuestros servidores. Sin formularios, sin fricción.",
   },
 ];
 

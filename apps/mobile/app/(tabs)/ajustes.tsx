@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Icon, type IconName } from '../../components/icon';
 import { useAppStore } from '../../lib/store';
-import { signOut, supabase } from '../../lib/supabase';
 
 export default function Ajustes() {
   const profile = useAppStore((s) => s.profile);
@@ -16,41 +15,18 @@ export default function Ajustes() {
 
   const onDelete = () => {
     Alert.alert(
-      'Borrar mi cuenta',
-      'Esta accion no se puede deshacer. Se borraran tu progreso, anclas y diario.',
+      'Borrar mi progreso',
+      'Esta accion no se puede deshacer. Se borraran racha, anclas, diario y ajustes solo de este dispositivo.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Borrar todo',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             setDeleting(true);
             try {
-              const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-              const { data: sessionData } = await supabase.auth.getSession();
-              const jwt = sessionData.session?.access_token;
-              if (apiUrl && jwt) {
-                const res = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/account`, {
-                  method: 'DELETE',
-                  headers: { Authorization: `Bearer ${jwt}` },
-                });
-                if (!res.ok) {
-                  Alert.alert(
-                    'No se pudo borrar',
-                    'Hubo un problema en el servidor. Intenta de nuevo en unos minutos.'
-                  );
-                  setDeleting(false);
-                  return;
-                }
-              }
-              await signOut();
               resetAll();
-              router.replace('/(auth)/login');
-            } catch {
-              Alert.alert(
-                'Sin conexion',
-                'No pude contactar con el servidor. Revisa tu internet e intentalo de nuevo.'
-              );
+              router.replace('/onboarding/welcome');
             } finally {
               setDeleting(false);
             }
@@ -71,8 +47,7 @@ export default function Ajustes() {
         </Text>
 
         <Section title="Perfil">
-          <Row icon="User" label={profile.name || 'Sin nombre'} hint={profile.guest ? 'Modo invitado' : 'Cuenta'} />
-          <Row icon="Mail" label="Email" hint={profile.guest ? 'No aplica' : '—'} />
+          <Row icon="User" label={profile.name || 'Anónimo'} hint="Solo en este dispositivo" />
         </Section>
 
         <Section title="Aliado">
@@ -117,10 +92,10 @@ export default function Ajustes() {
             </View>
             <View className="flex-1">
               <Text className="text-[15px] font-semibold text-warm">
-                {deleting ? 'Borrando...' : 'Borrar mi cuenta'}
+                {deleting ? 'Borrando...' : 'Borrar mi progreso'}
               </Text>
               <Text className="text-xs text-ink-3">
-                Esta accion no se puede deshacer. Se borraran tu progreso, anclas y diario.
+                Limpia este dispositivo. Nada sale al servidor — porque nada hay alli.
               </Text>
             </View>
           </Pressable>

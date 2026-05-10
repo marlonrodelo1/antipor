@@ -19,13 +19,15 @@ export function LandingNav() {
         <Link href="#faq" className="hover:text-[var(--foreground)]">
           FAQ
         </Link>
-        <Button size="sm">Descargar</Button>
+        <Link href="/onboarding/welcome">
+          <Button size="sm">Empezar</Button>
+        </Link>
       </div>
       <Link
-        href="/login"
-        className="text-sm font-medium text-[var(--color-ink-2)] md:hidden"
+        href="/onboarding/welcome"
+        className="text-sm font-medium text-[var(--color-primary)] md:hidden"
       >
-        Entrar
+        Empezar
       </Link>
     </nav>
   );

@@ -1,184 +1,193 @@
-import { Award, Flame, Leaf, MessageCircle, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { AliadoAvatar } from "@/components/aliado-avatar";
+import { Button } from "@/components/ui/button";
+import { StreakCircle } from "@/components/streak-circle";
+import { MoodCheckin } from "@/components/mood-checkin";
+import { createClient } from "@/lib/supabase/server";
 
-const stats = [
-  {
-    label: "Racha actual",
-    value: "14",
-    unit: "días",
-    color: "var(--color-secondary)",
-    Icon: Leaf,
-  },
-  {
-    label: "Mejor racha",
-    value: "32",
-    unit: "días",
-    color: "var(--color-accent)",
-    Icon: Award,
-  },
-  {
-    label: "Resistidos",
-    value: "46",
-    unit: "este mes",
-    color: "var(--color-primary)",
-    Icon: ShieldCheck,
-  },
-  {
-    label: "Con Aliado",
-    value: "2h 14m",
-    unit: "esta semana",
-    color: "var(--color-warm)",
-    Icon: MessageCircle,
-  },
-];
+export const dynamic = "force-dynamic";
 
-const triggers = [
-  { name: "Aburrimiento", pct: 38 },
-  { name: "Cansancio", pct: 28 },
-  { name: "Soledad", pct: 22 },
-  { name: "Estrés", pct: 12 },
-];
+function greetingForHour(hour: number): string {
+  if (hour < 6) return "Buenas noches";
+  if (hour < 13) return "Buenos días";
+  if (hour < 21) return "Buenas tardes";
+  return "Buenas noches";
+}
 
-const moodOptions = ["Bien", "Tranquilo", "Cansado", "Inquieto", "Vacío"];
+function reflectionFor(spiritualLayer: boolean): {
+  text: string;
+  source: string;
+} {
+  // Texto propio en español, sin reproducir versículos copyright.
+  if (spiritualLayer) {
+    return {
+      text:
+        "Hoy no se trata de no caer nunca, sino de levantarte cada vez. Lo que decidas en este minuto cuenta — aunque no se vea.",
+      source: "Reflexión del día · Capa espiritual on",
+    };
+  }
+  return {
+    text:
+      "Respira. Lo que sientes ahora no es lo que vas a sentir dentro de una hora. Tu yo de mañana te lo agradecerá.",
+    source: "Reflexión del día",
+  };
+}
 
-export default function PanelHomePage() {
+interface ProfileLite {
+  display_name: string | null;
+  spiritual_layer: boolean | null;
+  aliado_name: string | null;
+}
+
+interface StreakLite {
+  current_streak: number | null;
+  best_streak: number | null;
+}
+
+export default async function PanelHomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile: ProfileLite | null = null;
+  let streak: StreakLite | null = null;
+
+  if (user) {
+    const { data: p } = await supabase
+      .from("user_profile")
+      .select("display_name, spiritual_layer, aliado_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    profile = p as ProfileLite | null;
+
+    const { data: s } = await supabase
+      .from("streaks")
+      .select("current_streak, best_streak")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    streak = s as StreakLite | null;
+  }
+
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = greetingForHour(hour);
+  const displayName = profile?.display_name ?? null;
+  const aliadoName = profile?.aliado_name ?? "Aliado";
+  const currentStreak = streak?.current_streak ?? 0;
+  const bestStreak = streak?.best_streak ?? 0;
+  const spiritual = profile?.spiritual_layer === true;
+  const reflection = reflectionFor(spiritual);
+
+  const subhead =
+    currentStreak > 0
+      ? `Llevas ${currentStreak} ${currentStreak === 1 ? "día" : "días"} contigo.`
+      : "Hoy es un buen día para empezar.";
+
   return (
-    <div className="mx-auto flex max-w-[1180px] flex-col gap-5">
-      <header className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <div className="text-[13px] font-semibold text-[var(--color-ink-3)]">
-            Buenos días
-          </div>
-          <h1 className="mt-1 font-serif text-[34px] leading-[1.1] md:text-[40px]">
-            Llevas{" "}
-            <em className="italic text-[var(--color-secondary)]">14 días</em>{" "}
-            contigo.
-          </h1>
+    <div className="mx-auto flex max-w-[1100px] flex-col gap-5 pb-28 md:pb-5">
+      {/* Saludo */}
+      <header className="flex flex-col gap-1">
+        <div className="text-[13px] font-semibold text-[var(--color-ink-3)]">
+          {greeting}
+          {displayName ? `, ${displayName}` : ""}
         </div>
-        <Button variant="warm" size="md" leftIcon={<Flame size={16} />}>
-          Tengo un impulso
-        </Button>
+        <h1 className="font-serif text-[32px] leading-[1.1] md:text-[42px]">
+          {displayName ? (
+            <>
+              {displayName},{" "}
+              <em className="italic text-[var(--color-secondary)]">
+                {subhead.toLowerCase()}
+              </em>
+            </>
+          ) : (
+            <em className="italic text-[var(--color-secondary)]">{subhead}</em>
+          )}
+        </h1>
       </header>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label} className="p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-ink-3)]">
-                {s.label}
+      {/* Racha + reflexión */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="flex flex-col items-center justify-center gap-3 p-6 md:col-span-1">
+          <div className="relative flex items-center justify-center">
+            <StreakCircle days={currentStreak} max={Math.max(30, bestStreak || 30)} size={180} />
+            <div className="absolute flex flex-col items-center">
+              <span className="font-serif text-[44px] leading-none text-[var(--color-secondary)]">
+                {currentStreak}
               </span>
-              <s.Icon size={16} style={{ color: s.color }} />
+              <span className="mt-1 text-xs text-[var(--color-ink-3)]">
+                {currentStreak === 1 ? "día" : "días"}
+              </span>
             </div>
-            <div
-              className="mt-2.5 font-serif text-[32px] font-medium leading-none"
-              style={{ color: s.color }}
-            >
-              {s.value}
-            </div>
-            <div className="mt-1 text-xs text-[var(--color-ink-3)]">
-              {s.unit}
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Mood + Aliado */}
-      <div className="grid gap-3 md:grid-cols-3">
-        <Card className="md:col-span-2 p-6">
-          <h2 className="font-serif text-lg font-medium">¿Cómo estás ahora?</h2>
-          <p className="mt-1 text-sm text-[var(--color-ink-3)]">
-            Tu check-in diario, en privado. Sin presión.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {moodOptions.map((m) => (
-              <button
-                key={m}
-                type="button"
-                className="rounded-full border border-[var(--color-hairline)] bg-white px-4 py-2 text-sm text-[var(--color-ink-2)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                {m}
-              </button>
-            ))}
           </div>
+          {bestStreak > 0 && (
+            <div className="text-xs text-[var(--color-ink-3)]">
+              Mejor racha: <strong>{bestStreak}</strong>
+            </div>
+          )}
         </Card>
 
-        <Card className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-          <AliadoAvatar size={88} state="reposo" tone="primary" />
-          <div className="font-serif text-base font-medium">
-            Aliado está aquí
-          </div>
-          <p className="text-xs text-[var(--color-ink-3)]">
-            Toca cuando lo necesites.
-          </p>
-          <Button size="sm" variant="primary">
-            Hablar
-          </Button>
-        </Card>
-      </div>
-
-      {/* Pattern + reflection */}
-      <div className="grid gap-3 md:grid-cols-2">
         <Card
-          className="p-6"
-          style={{
-            background: "var(--color-warm-bg)",
-            borderColor: "var(--color-warm-soft)",
-          }}
-        >
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-warm)]">
-            Patrón detectado
-          </div>
-          <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-ink)]">
-            Sueles tener impulsos los <strong>domingos por la noche</strong>{" "}
-            cuando registras &ldquo;aburrimiento&rdquo;. Esta semana planea algo
-            entre las 22 y 24h.
-          </p>
-        </Card>
-        <Card
-          className="border-l-[3px] p-6"
+          className="border-l-[3px] p-6 md:col-span-2"
           style={{
             background: "var(--color-primary-soft)",
             borderLeftColor: "var(--color-primary)",
           }}
         >
-          <blockquote className="font-serif text-[17px] italic leading-relaxed text-[var(--color-ink)]">
-            &ldquo;Lo importante no es no caer nunca. Es levantarse cada vez que
-            cae uno.&rdquo;
+          <blockquote className="font-serif text-[18px] italic leading-relaxed text-[var(--color-ink)] md:text-[20px]">
+            {reflection.text}
           </blockquote>
           <div className="mt-3 text-xs text-[var(--color-ink-3)]">
-            Reflexión del día ·{" "}
-            <span className="font-semibold text-[var(--color-primary)]">
-              Capa espiritual on
-            </span>
+            {reflection.source}
           </div>
         </Card>
       </div>
 
-      {/* Triggers */}
+      {/* Mood check-in */}
       <Card className="p-6">
-        <h2 className="font-serif text-lg font-medium">Tus triggers</h2>
-        <div className="mt-4 flex flex-col gap-3">
-          {triggers.map((t) => (
-            <div key={t.name}>
-              <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-[var(--color-ink-2)]">
-                  {t.name}
-                </span>
-                <span className="text-[var(--color-ink-3)]">{t.pct}%</span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-hairline)]">
-                <div
-                  className="h-full rounded-full bg-[var(--color-primary)]"
-                  style={{ width: `${t.pct}%` }}
-                />
-              </div>
-            </div>
-          ))}
+        <h2 className="font-serif text-lg font-medium">¿Cómo estás ahora?</h2>
+        <p className="mt-1 text-sm text-[var(--color-ink-3)]">
+          Tu check-in diario, en privado. Sin presión.
+        </p>
+        <div className="mt-5">
+          <MoodCheckin hour={hour} dayOfWeek={now.getDay()} />
         </div>
       </Card>
+
+      {/* CTA chat */}
+      <Card className="flex flex-col items-start gap-3 p-6 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-serif text-lg font-medium">
+            {aliadoName} está aquí
+          </div>
+          <p className="mt-0.5 text-sm text-[var(--color-ink-3)]">
+            Habla cuando quieras. No hace falta motivo.
+          </p>
+        </div>
+        <Link href="/panel/chat">
+          <Button variant="primary" size="md">
+            Abrir chat
+          </Button>
+        </Link>
+      </Card>
+
+      {/* Botón ROJO sticky bottom */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-4 md:static md:px-0 md:pt-2">
+        <Link
+          href="/panel/impulso"
+          className="pointer-events-auto w-full max-w-md md:max-w-none"
+        >
+          <Button
+            variant="warm"
+            size="lg"
+            leftIcon={<Flame size={20} />}
+            className="w-full shadow-[0_18px_40px_-12px_rgba(217,119,87,0.55)] md:w-auto md:px-10"
+          >
+            Tengo un impulso ahora
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

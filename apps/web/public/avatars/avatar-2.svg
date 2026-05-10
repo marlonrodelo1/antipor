@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Placeholder. Reemplazar por ilustración profesional en v0.2. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" data-name="avatar-2" role="img" aria-label="Avatar 2">
+  <circle cx="128" cy="128" r="128" fill="#7BA888"/>
+  <polygon points="128,60 188,164 68,164" fill="#F7F5F2" opacity="0.95"/>
+  <circle cx="128" cy="138" r="16" fill="#7BA888"/>
+</svg>

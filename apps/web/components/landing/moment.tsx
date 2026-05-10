@@ -16,9 +16,9 @@ export function LandingMoment() {
           </em>
         </h2>
         <p className="mx-auto mt-6 max-w-[620px] text-base leading-relaxed text-[var(--color-ink-2)] md:text-lg">
-          Cuando intentas abrir una página, Antiport no te enseña una pared. Te
-          pone a Aliado al teléfono. Te pregunta qué pasó hoy. Y te ofrece tres
-          salidas concretas.
+          Cuando llega el impulso, pulsas un botón y Aliado aparece. Te pregunta
+          qué pasó hoy. Te ofrece tres salidas concretas. Sin pared, sin
+          sermón.
         </p>
       </div>
     </section>

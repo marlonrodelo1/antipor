@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Placeholder. Reemplazar por ilustración profesional en v0.2. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" data-name="avatar-4" role="img" aria-label="Avatar 4">
+  <circle cx="128" cy="128" r="128" fill="#D97757"/>
+  <path d="M128 50 C170 70 206 110 206 128 C206 146 170 186 128 206 C86 186 50 146 50 128 C50 110 86 70 128 50 Z" fill="#F7F5F2" opacity="0.95"/>
+  <path d="M128 92 L156 128 L128 164 L100 128 Z" fill="#D97757"/>
+</svg>

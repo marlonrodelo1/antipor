@@ -1,4 +1,5 @@
-import { Apple, Lock, Play, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AliadoAvatar } from "@/components/aliado-avatar";
 
@@ -8,7 +9,7 @@ export function LandingHero() {
       <div className="flex-1">
         <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary-soft)] px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[var(--color-primary)]">
           <ShieldCheck size={14} />
-          Privado · Gratis · iOS y Android
+          Privado · Gratis · Anónimo
         </span>
         <h1 className="font-serif text-[44px] leading-[1.05] md:text-[72px]">
           Cuando el impulso llegue,
@@ -16,16 +17,20 @@ export function LandingHero() {
           <em className="italic text-[var(--color-primary)]">no estarás solo.</em>
         </h1>
         <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-[var(--color-ink-2)] md:text-xl">
-          Antiport intercepta el momento exacto y te acompaña con IA. Una
-          conversación, no un bloqueo. Gratis, privado, sin juicio.
+          Antiport te acompaña con IA en el momento exacto. Una conversación,
+          no un muro. Sin email, sin contraseña, anónimo por defecto.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button variant="dark" size="lg" leftIcon={<Apple size={18} />}>
-            App Store
-          </Button>
-          <Button variant="dark" size="lg" leftIcon={<Play size={16} />}>
-            Google Play
-          </Button>
+          <Link href="/onboarding/welcome">
+            <Button variant="primary" size="lg">
+              Empezar (gratis)
+            </Button>
+          </Link>
+          <Link href="/recuperar-codigo">
+            <Button variant="outline" size="lg">
+              ¿Vienes de otro dispositivo? Recuperar con código
+            </Button>
+          </Link>
         </div>
         <div className="mt-5 flex items-center gap-4 text-[13px] text-[var(--color-ink-3)]">
           <span>Cómo funciona</span>
