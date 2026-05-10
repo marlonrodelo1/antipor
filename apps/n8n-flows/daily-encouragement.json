@@ -1,0 +1,118 @@
+{
+  "name": "antiport-daily-encouragement",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 320]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/user_profile?select=user_id,display_name,aliado_name,spiritual_layer,language&anonymous=eq.false",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-fetch-users",
+      "name": "Fetch opted-in users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 320],
+      "credentials": {
+        "httpHeaderAuth": { "id": "supabase-service", "name": "Supabase Service Role" }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "node-split",
+      "name": "Split per user",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Personalize a short encouragement message in Spanish.\nconst u = $input.first().json;\nconst greetings = [\n  `Buenos dias${u.display_name ? `, ${u.display_name}` : ''}.`,\n  'Hola.',\n  'Buenas.',\n  'Aqui estoy.'\n];\nconst seculares = [\n  'Hoy no tienes que hacerlo perfecto, solo presente. Si aparece el impulso, abreme.',\n  'Un dia mas. Si la cabeza se pone rara, respira 4-7-8 conmigo y seguimos.',\n  'No estas solo en esto. Si hoy se complica, acuerdate de tus anclas.'\n];\nconst espirituales = [\n  'Filipenses 4:8: en lo verdadero, lo puro, lo amable. Que tu mente descanse ahi hoy.',\n  'Lamentaciones 3:23: nuevas son cada manana. Hoy empieza limpio, sin cuentas pendientes.',\n  'Hoy, si el impulso aparece, recuerda 1 Cor 10:13: hay una salida. Te ayudo a encontrarla.'\n];\nconst pool = u.spiritual_layer ? espirituales : seculares;\nconst hi = greetings[Math.floor(Math.random() * greetings.length)];\nconst body = pool[Math.floor(Math.random() * pool.length)];\nreturn [{ json: { ...u, title: 'Antiport', message: `${hi} ${body}` } }];"
+      },
+      "id": "node-personalize",
+      "name": "Personalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://exp.host/--/api/v2/push/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Accept", "value": "application/json" },
+            { "name": "Accept-encoding", "value": "gzip, deflate" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": $env.EXPO_PUSH_TOKEN_PLACEHOLDER,\n  \"title\": $json.title,\n  \"body\": $json.message,\n  \"sound\": \"default\",\n  \"channelId\": \"daily\"\n}",
+        "options": { "timeout": 8000 }
+      },
+      "id": "node-expo-push",
+      "name": "Expo Push (placeholder)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 240]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aliado@antiport.app",
+        "toEmail": "={{$json.email || $json.user_id + '@noemail.invalid'}}",
+        "subject": "={{$json.title}}",
+        "text": "={{$json.message}}",
+        "options": {}
+      },
+      "id": "node-resend",
+      "name": "Resend Email (optional)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1120, 400],
+      "credentials": {
+        "smtp": { "id": "resend-smtp", "name": "Resend SMTP" }
+      }
+    }
+  ],
+  "connections": {
+    "Cron 09:00": { "main": [[{ "node": "Fetch opted-in users", "type": "main", "index": 0 }]] },
+    "Fetch opted-in users": { "main": [[{ "node": "Split per user", "type": "main", "index": 0 }]] },
+    "Split per user": { "main": [[{ "node": "Personalize", "type": "main", "index": 0 }]] },
+    "Personalize": {
+      "main": [[
+        { "node": "Expo Push (placeholder)", "type": "main", "index": 0 },
+        { "node": "Resend Email (optional)", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "antiport" }, { "name": "daily" }],
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

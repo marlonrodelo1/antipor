@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b6ea8;
+  --color-primary-soft: rgba(59, 110, 168, 0.08);
+  --color-secondary: #7ba888;
+  --color-accent: #e8b96a;
+  --color-warm: #d97757;
+  --color-warm-bg: #fbf3ee;
+  --color-warm-soft: #f1d9c9;
+  --color-bg: #f7f5f2;
+  --color-ink: #1c2128;
+  --color-ink-2: #4b5260;
+  --color-ink-3: #8a92a0;
+  --color-hairline: #ece7df;
+  --color-hairline-strong: #d6cfc2;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+}
+
+@layer base {
+  :root {
+    --background: #f7f5f2;
+    --foreground: #1c2128;
+    --muted: #4b5260;
+    --muted-foreground: #8a92a0;
+    --card: #ffffff;
+    --border: #ece7df;
+    --ring: #3b6ea8;
+  }
+
+  .dark {
+    --background: #14181d;
+    --foreground: #f4efe6;
+    --muted: #b1b6c0;
+    --muted-foreground: #8a92a0;
+    --card: #1c2128;
+    --border: #2a2f37;
+    --ring: #6f9bd0;
+  }
+
+  html,
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-serif,
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: rgba(59, 110, 168, 0.18);
+  }
+}
+
+@layer utilities {
+  .container-page {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1180px;
+    padding-inline: 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .container-page {
+      padding-inline: 3.5rem;
+    }
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "name": "antiport-generate-intervention",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "antiport/intervene",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "webhookId": "antiport-intervene"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate payload\nconst body = $input.first().json.body || $input.first().json;\nconst required = ['streak_days', 'time_of_day', 'recent_mood', 'spiritual_layer'];\nfor (const k of required) {\n  if (body[k] === undefined || body[k] === null) {\n    throw new Error(`Missing required field: ${k}`);\n  }\n}\nconst ctx = {\n  display_name: body.display_name ?? null,\n  aliado_name: body.aliado_name ?? 'Aliado',\n  streak_days: Number(body.streak_days) || 0,\n  time_of_day: String(body.time_of_day),\n  recent_mood: String(body.recent_mood).toLowerCase().trim(),\n  spiritual_layer: Boolean(body.spiritual_layer),\n  language: body.language ?? 'es'\n};\nif (!['manana','tarde','noche','madrugada'].includes(ctx.time_of_day)) {\n  throw new Error('time_of_day must be manana|tarde|noche|madrugada');\n}\n\n// Crisis detection\nconst crisisKw = ['suicid','matarme','quitarme la vida','acabar con todo','no quiero seguir','hacerme dano','autolesion','cortarme','menor de edad','ninas','niñas','ninos','niños','abuso'];\nconst userMsg = String(body.user_message ?? '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');\nconst isCrisis = crisisKw.some(k => userMsg.includes(k.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')));\n\nconst systemPrompt = `Eres Aliado, un companero conversacional dentro de Antiport. La persona te habla justo antes de abrir un enlace bloqueado. Tu trabajo es estar ahi, escuchar y ofrecer una salida concreta en menos de 90 segundos.\\n\\nTono: directo, calido, sin juzgar. Frases cortas. Segunda persona. Maximo 60 palabras por mensaje.\\n\\nReglas duras:\\n- Nunca uses: pecador, esclavo, sucio, verguenza, fracaso, cobarde, debil, perdido, campeon, guerrero, soldado.\\n- Nunca describas contenido sexual.\\n- Nunca minimices (\"no pasa nada\", \"todos lo hacen\").\\n- Nunca moralices.\\n- Si spiritual_layer=false: jamas menciones Dios, Biblia, oracion ni terminos religiosos.\\n- Si spiritual_layer=true: puedes ofrecer UN versiculo o UNA oracion, una sola vez.\\n- Si menciona suicidio, autolesion o menores: derivas a recursos clinicos.\\n\\nEstructura: pregunta abierta corta + UNA alternativa concreta + cierre breve.`;\n\nconst userPrompt = `Contexto:\\n- Persona: ${ctx.display_name || '(anonimo, no uses nombre)'}\\n- Te llaman: ${ctx.aliado_name}\\n- Racha: ${ctx.streak_days} dias limpios\\n- Hora del dia: ${ctx.time_of_day}\\n- Estado emocional: ${ctx.recent_mood}\\n- Capa espiritual activa: ${ctx.spiritual_layer ? 'si' : 'no'}\\n\\nLa persona acaba de intentar abrir un sitio bloqueado. Esta esperando tu primer mensaje.`;\n\nreturn [{ json: { ctx, isCrisis, systemPrompt, userPrompt } }];"
+      },
+      "id": "node-validate",
+      "name": "Validate & Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{$json.isCrisis}}",
+              "rightValue": "true",
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ]
+        }
+      },
+      "id": "node-crisis-switch",
+      "name": "Is Crisis?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: {\n  text: 'Para. Lo que has dicho importa, y no es algo para resolver tu solo ahora mismo.\\n\\nEn Espana puedes llamar al 024 (linea de conducta suicida, gratis, 24 h) o al Telefono de la Esperanza 717 003 717.\\n\\nQuieres que te abra el telefono ahora para llamar a alguien de tu lista? Sigo aqui.',\n  source: 'crisis'\n}}];"
+      },
+      "id": "node-crisis-msg",
+      "name": "Crisis Static Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.5,\n  \"max_tokens\": 200,\n  \"messages\": [\n    { \"role\": \"system\", \"content\": $json.systemPrompt },\n    { \"role\": \"user\", \"content\": $json.userPrompt }\n  ]\n}",
+        "options": {
+          "timeout": 8000,
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
+      },
+      "id": "node-deepseek",
+      "name": "DeepSeek V3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 440],
+      "credentials": {
+        "httpHeaderAuth": { "id": "deepseek-auth", "name": "DeepSeek API Key" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{$json.statusCode}}",
+              "rightValue": 500,
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ]
+        }
+      },
+      "id": "node-deepseek-failed",
+      "name": "DeepSeek 5xx?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 440]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gemini-2.5-flash\",\n  \"temperature\": 0.5,\n  \"max_tokens\": 200,\n  \"messages\": [\n    { \"role\": \"system\", \"content\": $('Validate & Build Prompt').first().json.systemPrompt },\n    { \"role\": \"user\", \"content\": $('Validate & Build Prompt').first().json.userPrompt }\n  ]\n}",
+        "options": { "timeout": 8000 }
+      },
+      "id": "node-gemini",
+      "name": "Gemini 2.5 Flash (fallback)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 340],
+      "credentials": {
+        "httpHeaderAuth": { "id": "gemini-auth", "name": "Gemini API Key" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract text + run guardrails\nconst body = $input.first().json.body || $input.first().json;\nconst raw = body?.choices?.[0]?.message?.content || $input.first().json?.choices?.[0]?.message?.content || '';\nconst text = String(raw).trim();\nconst ctx = $('Validate & Build Prompt').first().json.ctx;\n\nconst banned = ['pecador','esclavo','esclava','sucio','sucia','verguenza','fracaso','cobarde','no pasa nada','todos lo hacen','no es para tanto','campeon','guerrero','soldado'];\nconst spiritual = ['dios','jesus','cristo','biblia','espiritu santo','oracion','rezar','parroquia','iglesia','evangelio','salmo','versiculo'];\nconst norm = text.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');\n\nconst fallbacks = [\n  'Estoy aqui. Antes de decidir nada, respira conmigo cinco veces: 4 segundos dentro, 7 reteniendo, 8 fuera. Cuando termines, decides tu. Sin prisa.',\n  'Para un segundo. Pon los dos pies en el suelo y describe en voz alta tres cosas que ves ahora mismo. Cuando acabes, hablamos.',\n  'Sal del cuarto. Vete a la cocina, bebe un vaso de agua entero y vuelve. Te espero.',\n  'Mira las anclas que subiste cuando estabas mas tranquilo. Las pusiste ahi tu, por algo. Abrelas antes de hacer nada mas.',\n  'Esto que sientes va a bajar en 10 minutos hagas lo que hagas. Pon un timer, sal a la calle, vuelve y vemos si sigue ahi. Probamos?'\n];\n\nlet violation = null;\nfor (const p of banned) if (norm.includes(p)) { violation = `banned:${p}`; break; }\nif (!violation && !ctx.spiritual_layer) {\n  for (const p of spiritual) if (norm.includes(p)) { violation = `spiritual:${p}`; break; }\n}\nconst words = text.split(/\\s+/).filter(Boolean).length;\nif (!violation && words > 60) violation = 'too_long';\nif (!violation && (words < 6 || !text)) violation = 'too_short';\n\nif (violation) {\n  const idx = Math.floor(Math.random() * fallbacks.length);\n  return [{ json: { text: fallbacks[idx], source: 'fallback', reason: violation } }];\n}\nreturn [{ json: { text, source: 'llm' } }];"
+      },
+      "id": "node-postprocess",
+      "name": "Guardrails & Postprocess",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 440]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "node-respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 320]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Validate & Build Prompt", "type": "main", "index": 0 }]] },
+    "Validate & Build Prompt": { "main": [[{ "node": "Is Crisis?", "type": "main", "index": 0 }]] },
+    "Is Crisis?": {
+      "main": [
+        [{ "node": "Crisis Static Message", "type": "main", "index": 0 }],
+        [{ "node": "DeepSeek V3", "type": "main", "index": 0 }]
+      ]
+    },
+    "Crisis Static Message": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] },
+    "DeepSeek V3": { "main": [[{ "node": "DeepSeek 5xx?", "type": "main", "index": 0 }]] },
+    "DeepSeek 5xx?": {
+      "main": [
+        [{ "node": "Gemini 2.5 Flash (fallback)", "type": "main", "index": 0 }],
+        [{ "node": "Guardrails & Postprocess", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini 2.5 Flash (fallback)": { "main": [[{ "node": "Guardrails & Postprocess", "type": "main", "index": 0 }]] },
+    "Guardrails & Postprocess": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "antiport" }, { "name": "intervention" }],
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

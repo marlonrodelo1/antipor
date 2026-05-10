@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Antiport — Diseño</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #3B6EA8;
+    --primary-deep: #2C5485;
+    --secondary: #7BA888;
+    --accent: #E8B96A;
+    --warm: #D97757;
+    --warm-soft: #EFC9B6;
+    --warm-bg: #F5E5DC;
+    --bg: #F7F5F2;
+    --surface: #FFFFFF;
+    --ink: #1C2128;
+    --ink-2: #3F4854;
+    --ink-3: #6B7280;
+    --hairline: rgba(28,33,40,0.08);
+    --hairline-strong: rgba(28,33,40,0.14);
+
+    /* dark */
+    --dk-bg: #0F1419;
+    --dk-surface: #1C2128;
+    --dk-surface-2: #242A33;
+    --dk-ink: #E8E6E3;
+    --dk-ink-2: #A6ADB7;
+    --dk-hairline: rgba(255,255,255,0.08);
+
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: var(--sans); color: var(--ink); }
+  /* lightweight reset for inside-frame layouts */
+  .ap * { box-sizing: border-box; }
+  .ap { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .ap-serif { font-family: var(--serif); font-optical-sizing: auto; letter-spacing: -0.01em; }
+  .ap-h1 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.02em; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+
+<script type="text/babel" src="ap-icons.jsx"></script>
+<script type="text/babel" src="ap-aliado.jsx"></script>
+<script type="text/babel" src="ap-shared.jsx"></script>
+
+<script type="text/babel" src="screens-overview.jsx"></script>
+<script type="text/babel" src="screens-mobile.jsx"></script>
+<script type="text/babel" src="screens-mobile-2.jsx"></script>
+<script type="text/babel" src="screens-mobile-2-extra.jsx"></script>
+<script type="text/babel" src="screens-landing.jsx"></script>
+<script type="text/babel" src="screens-email-web.jsx"></script>
+
+<script type="text/babel" src="ap-app.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Build / cache
+.next/
+out/
+dist/
+build/
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# Expo / React Native
+.expo/
+.expo-shared/
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+*.jks
+*.keystore
+*.mobileprovision
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing / coverage
+coverage/
+.nyc_output/
+
+# Sentry
+.sentryclirc
+
+# Local data
+*.sqlite
+*.sqlite3
+*.db
+
+# Secrets / packaging
+*.tar.gz
+!design-pkg.tar.gz

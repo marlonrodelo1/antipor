@@ -1,0 +1,107 @@
+{
+  "name": "antiport-weekly-report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 20 * * 0" }]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron Sunday 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 320]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/user_profile?select=user_id,display_name,aliado_name,spiritual_layer,language&anonymous=eq.false",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-fetch-users",
+      "name": "Fetch opted-in users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 320]
+    },
+    {
+      "parameters": { "fieldToSplitOut": "data", "options": {} },
+      "id": "node-split",
+      "name": "Split per user",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/intervention_log?user_id=eq.{{$json.user_id}}&occurred_at=gte.{{ DateTime.now().minus({days:7}).toISO() }}&select=outcome,mood,category,occurred_at",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-fetch-week",
+      "name": "Fetch week interventions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $('Split per user').item.json;\nconst events = Array.isArray($input.first().json) ? $input.first().json : ($input.first().json.data || []);\nconst total = events.length;\nconst counts = { resisted: 0, breathed: 0, contacted: 0, relapsed: 0, dismissed: 0 };\nfor (const e of events) {\n  if (counts[e.outcome] !== undefined) counts[e.outcome]++;\n}\nconst topMoodMap = {};\nfor (const e of events) if (e.mood) topMoodMap[e.mood] = (topMoodMap[e.mood] || 0) + 1;\nconst topMood = Object.entries(topMoodMap).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'sin datos';\n\nconst greeting = user.display_name ? `Hola ${user.display_name}` : 'Hola';\nconst aliado = user.aliado_name || 'Aliado';\n\nconst html = `<!doctype html><html><body style=\"font-family:system-ui,sans-serif;line-height:1.5;color:#222;max-width:520px;margin:0 auto;padding:24px\">\n  <h2 style=\"margin:0 0 8px\">${greeting},</h2>\n  <p>Soy ${aliado}. Esta es tu semana, sin juicio, solo lo que paso.</p>\n  <ul>\n    <li><b>${total}</b> momentos en los que la app estuvo contigo.</li>\n    <li><b>${counts.resisted + counts.breathed + counts.contacted}</b> veces saliste sin caer.</li>\n    <li><b>${counts.relapsed}</b> veces caiste. No es el fin del mundo, es informacion.</li>\n    <li>Estado emocional mas frecuente esta semana: <b>${topMood}</b>.</li>\n  </ul>\n  <p>Empezamos otra semana mañana. Yo sigo aqui.</p>\n  <p style=\"font-size:12px;color:#888;margin-top:32px\">Antiport · privado y gratuito · <a href=\"https://antiport.app/ajustes/email\">ajustar avisos</a></p>\n</body></html>`;\n\nconst text = `${greeting},\\n\\nEsta semana: ${total} momentos contigo, ${counts.resisted + counts.breathed + counts.contacted} sin caer, ${counts.relapsed} caidas. Estado mas frecuente: ${topMood}.\\n\\nManana empezamos otra. Sigo aqui.\\n\\n— ${aliado}`;\n\nreturn [{ json: { ...user, html, text, subject: 'Tu semana en Antiport' } }];"
+      },
+      "id": "node-render",
+      "name": "Render Resend template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.RESEND_API_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"Aliado <aliado@antiport.app>\",\n  \"to\": [$json.email || ($json.user_id + '@noemail.invalid')],\n  \"subject\": $json.subject,\n  \"html\": $json.html,\n  \"text\": $json.text\n}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-send",
+      "name": "Send via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 320]
+    }
+  ],
+  "connections": {
+    "Cron Sunday 20:00": { "main": [[{ "node": "Fetch opted-in users", "type": "main", "index": 0 }]] },
+    "Fetch opted-in users": { "main": [[{ "node": "Split per user", "type": "main", "index": 0 }]] },
+    "Split per user": { "main": [[{ "node": "Fetch week interventions", "type": "main", "index": 0 }]] },
+    "Fetch week interventions": { "main": [[{ "node": "Render Resend template", "type": "main", "index": 0 }]] },
+    "Render Resend template": { "main": [[{ "node": "Send via Resend", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "antiport" }, { "name": "weekly" }],
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

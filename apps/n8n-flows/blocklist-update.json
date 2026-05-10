@@ -1,0 +1,76 @@
+{
+  "name": "antiport-blocklist-update",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 4 * * 1" }]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron weekly Mon 04:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 320]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts",
+        "options": { "timeout": 30000, "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "node-fetch-hosts",
+      "name": "Fetch StevenBlack porn hosts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse hosts file -> list of unique domains.\nconst raw = String($input.first().json.data || $input.first().json);\nconst lines = raw.split(/\\r?\\n/);\nconst domains = new Set();\nfor (const line of lines) {\n  const trimmed = line.trim();\n  if (!trimmed || trimmed.startsWith('#')) continue;\n  // Format: \"0.0.0.0 example.com\" or \"127.0.0.1 example.com\"\n  const parts = trimmed.split(/\\s+/);\n  if (parts.length < 2) continue;\n  const d = parts[1].toLowerCase();\n  if (d === 'localhost' || d === '0.0.0.0' || d === 'local' || d.startsWith('localhost.')) continue;\n  if (!/^[a-z0-9.-]+\\.[a-z]{2,}$/i.test(d)) continue;\n  domains.add(d);\n}\nconst out = Array.from(domains).map(domain => ({ domain, category: 'adult', severity: 3 }));\n// Chunk for upsert: max 1000 per request to keep payload small.\nconst chunkSize = 1000;\nconst chunks = [];\nfor (let i = 0; i < out.length; i += chunkSize) {\n  chunks.push({ rows: out.slice(i, i + chunkSize), index: i / chunkSize, total: Math.ceil(out.length / chunkSize) });\n}\nreturn chunks.map(c => ({ json: c }));"
+      },
+      "id": "node-parse",
+      "name": "Parse & chunk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/blocklist_domains?on_conflict=domain",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=ignore-duplicates,return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.rows) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-upsert",
+      "name": "Upsert into Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 320],
+      "credentials": {
+        "httpHeaderAuth": { "id": "supabase-service", "name": "Supabase Service Role" }
+      }
+    }
+  ],
+  "connections": {
+    "Cron weekly Mon 04:00": { "main": [[{ "node": "Fetch StevenBlack porn hosts", "type": "main", "index": 0 }]] },
+    "Fetch StevenBlack porn hosts": { "main": [[{ "node": "Parse & chunk", "type": "main", "index": 0 }]] },
+    "Parse & chunk": { "main": [[{ "node": "Upsert into Supabase", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "antiport" }, { "name": "blocklist" }],
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

@@ -1,0 +1,18 @@
+{
+  "version": "2026-05-09.1",
+  "issuedAt": "2026-05-09T00:00:00.000Z",
+  "signature": "PLACEHOLDER_SIGNATURE",
+  "algorithm": "ed25519",
+  "domains": [
+    "example-blocked-1.invalid",
+    "example-blocked-2.invalid",
+    "example-blocked-3.invalid",
+    "example-blocked-4.invalid",
+    "example-blocked-5.invalid",
+    "example-blocked-6.invalid",
+    "example-blocked-7.invalid",
+    "example-blocked-8.invalid",
+    "example-blocked-9.invalid",
+    "example-blocked-10.invalid"
+  ]
+}
